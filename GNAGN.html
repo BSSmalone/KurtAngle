@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Terminal Kurt Angle</title>
+
+<style>
+body{
+    margin:0;
+    height:100vh;
+    width:100vw;
+    background:url("kurt.jpg") center/cover no-repeat fixed;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-family:Consolas, monospace;
+    overflow:hidden;
+}
+
+#terminal{
+    width:900px;
+    padding:25px;
+    font-size:20px;
+    color:#00ff00;
+    background:rgba(0,0,0,0.75);
+    border:2px solid #00ff00;
+    box-shadow:0 0 15px #00ff00;
+    white-space:pre-line;
+}
+</style>
+</head>
+
+<body>
+
+<audio autoplay loop>
+    <source src="kurt-angle.mp3" type="audio/mpeg">
+</audio>
+
+<div id="terminal">Autorisez l'accès caméra & micro...</div>
+
+<script>
+let out=document.getElementById("terminal");
+let queue=[],running=false;
+
+// écriture animée
+function line(t,speed=20){
+    queue.push({t,speed});
+    if(!running) run();
+}
+function run(){
+    if(queue.length===0){ running=false; return;}
+    running=true;
+    let {t,speed}=queue.shift(),i=0;
+    let interval=setInterval(()=>{
+        out.innerHTML+=t[i++];
+        if(i>=t.length){ clearInterval(interval); out.innerHTML+="\n"; run();}
+    },speed);
+}
+
+
+// 🔥 Étape 1 — attente autorisation utilisateur
+navigator.mediaDevices.getUserMedia({video:true,audio:true})
+.then(stream=>{
+
+    // 🔥 L’écriture NE démarre qu’après validation
+    out.innerHTML="Accès accordé. Initialisation...\n\n";
+
+    // Étape 2 — IP après autorisation
+    fetch("https://ipwho.is/")
+    .then(r=>r.json())
+    .then(info=>{
+
+        // Animation terminal
+        line("Initialisation du terminal...");
+        line("Connexion au serveur sécurisé...");
+        line("Analyse du réseau...\n");
+        setTimeout(()=>{
+            line(`Adresse IP : ${info.ip}`);
+            line(`Ville : ${info.city}`);
+            line(`Région : ${info.region}`);
+            line(`Pays : ${info.country}`);
+            line(`FAI : ${info.connection.isp}\n`);
+            line("Scan matériel : OK");
+            line("Caméra : ✔ ACTIVÉE");
+            line("Microphone : ✔ ACTIF");
+            line("\n>>> ACCÈS AUTORISÉ <<<\n");
+
+            stream.getTracks().forEach(t=>t.stop());
+        },800);
+
+    });
+})
+
+.catch(err=>{
+
+    // 🔥 Si la personne refuse → l’écriture démarre quand même mais version rouge
+    out.innerHTML="Accès refusé. Analyse limitée...\n\n";
+
+    fetch("https://ipwho.is/")
+    .then(r=>r.json())
+    .then(info=>{
+        line("Initialisation du terminal...");
+        line("Connexion au serveur sécurisé...");
+        line("Analyse en mode restreint...\n");
+        setTimeout(()=>{
+            line(`Adresse IP : ${info.ip}`);
+            line(`Ville : ${info.city}`);
+            line(`Région : ${info.region}`);
+            line(`Pays : ${info.country}`);
+            line(`FAI : ${info.connection.isp}\n`);
+            line("Caméra : ❌ Refusée");
+            line("Microphone : ❌ Refusé");
+            line("\n>>> ACCÈS REFUSÉ PAR L'UTILISATEUR <<<\n");
+        },800);
+    });
+});
+</script>
+</body>
+</html>
